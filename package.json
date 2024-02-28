@@ -1,8 +1,8 @@
 {
   "name": "dash_websocket_component",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Project Description",
-"repository": {
+  "repository": {
     "type": "git",
     "url": "git://github.com/tkacikdominik/dash-websocket-component.git"
   },

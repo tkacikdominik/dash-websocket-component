@@ -7,6 +7,7 @@ export default class DashWebsocketComponent extends Component {
         const {protocols} = this.props;
         url = url ? url : 'ws://' + location.host + location.pathname + 'ws';
         this.client = new WebSocket(url, protocols);
+
         this.client.onopen = (e) => {
             this.props.setProps({
                 state: {
@@ -14,11 +15,15 @@ export default class DashWebsocketComponent extends Component {
                     isTrusted: e.isTrusted,
                     timeStamp: e.timeStamp,
                     origin: e.origin,
+                    lastConnected: Number(new Date()),
                 },
             });
         };
         this.client.onmessage = (e) => {
             this.props.setProps({
+                state: {
+                    lastConnected: Number(new Date()),
+                },
                 message: {
                     data: e.data,
                     isTrusted: e.isTrusted,
@@ -28,11 +33,13 @@ export default class DashWebsocketComponent extends Component {
             });
         };
         this.client.onerror = (e) => {
+            console.log(`ON ERROR ${location.host}`);
             this.props.setProps({error: JSON.stringify(e)});
         };
         this.client.onclose = (e) => {
-            this.props.setProps({error: JSON.stringify(e)});
+            console.log(`ON CLOSE ${location.host}`);
             this.props.setProps({
+                error: JSON.stringify(e),
                 state: {
                     readyState: WebSocket.CLOSED,
                     isTrusted: e.isTrusted,
@@ -40,27 +47,21 @@ export default class DashWebsocketComponent extends Component {
                     code: e.code,
                     reason: e.reason,
                     wasClean: e.wasClean,
+                    lastConnected: Number(new Date()),
                 },
             });
+            setTimeout(_init_client, 1000);
         };
     }
 
-    _watchdog() {
+    componentDidMount() {
+        console.log('Try to load web socket component');
         this.props.setProps({
             state: {
                 lastConnected: 0,
-                readyState: WebSocket.CLOSED,
             },
         });
-        setInterval(() => {
-            if (this.props.state.readyState === WebSocket.CLOSED) {
-                this._init_client();
-            }
-        }, 1000);
-    }
-
-    componentDidMount() {
-        this._watchdog();
+        this._init_client();
     }
 
     componentDidUpdate(prevProps) {
@@ -69,6 +70,7 @@ export default class DashWebsocketComponent extends Component {
             if (this.props.state.readyState === WebSocket.OPEN) {
                 this.client.send(send);
             }
+            // TODO handle this
         }
     }
 
