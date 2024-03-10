@@ -10,6 +10,7 @@ export default class DashWebsocketComponent extends Component {
 
         this.client.onopen = (e) => {
             this.props.setProps({
+                ...this.props,
                 state: {
                     readyState: WebSocket.OPEN,
                     isTrusted: e.isTrusted,
@@ -21,6 +22,7 @@ export default class DashWebsocketComponent extends Component {
         };
         this.client.onmessage = (e) => {
             this.props.setProps({
+                ...this.props,
                 state: {
                     lastConnected: Number(new Date()),
                 },
@@ -33,12 +35,11 @@ export default class DashWebsocketComponent extends Component {
             });
         };
         this.client.onerror = (e) => {
-            console.log(`ON ERROR ${location.host}`);
             this.props.setProps({error: JSON.stringify(e)});
         };
         this.client.onclose = (e) => {
-            console.log(`ON CLOSE ${location.host}`);
             this.props.setProps({
+                ...this.props,
                 error: JSON.stringify(e),
                 state: {
                     readyState: WebSocket.CLOSED,
@@ -50,14 +51,13 @@ export default class DashWebsocketComponent extends Component {
                     lastConnected: Number(new Date()),
                 },
             });
-            setTimeout(_init_client, 1000);
         };
     }
 
     componentDidMount() {
-        console.log('Try to load web socket component');
         this.props.setProps({
             state: {
+                ...this.props.state,
                 lastConnected: 0,
             },
         });
@@ -65,9 +65,13 @@ export default class DashWebsocketComponent extends Component {
     }
 
     componentDidUpdate(prevProps) {
+        if (this.client.readyState === WebSocket.CLOSED) {
+            this._init_client();
+        }
+
         const {send} = this.props;
         if (send && send !== prevProps.send) {
-            if (this.props.state.readyState === WebSocket.OPEN) {
+            if (this.client.readyState === WebSocket.OPEN) {
                 this.client.send(send);
             }
             // TODO handle this
