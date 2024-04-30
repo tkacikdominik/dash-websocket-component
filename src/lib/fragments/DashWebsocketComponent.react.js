@@ -58,6 +58,7 @@ export default class DashWebsocketComponent extends Component {
         console.log('Try to load web socket component');
         this.props.setProps({
             state: {
+                ...this.props.state,
                 lastConnected: 0,
             },
         });
