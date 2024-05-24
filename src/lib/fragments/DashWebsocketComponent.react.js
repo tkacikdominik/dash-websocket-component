@@ -1,95 +1,121 @@
 import {Component} from 'react';
 import PropTypes from 'prop-types';
 
+const UNLIMITED_RECONNECT_ATTEMPTS = -1;
+const DEFAULT_RECONNECT_INTERVAL_MS = 2000;
 export default class DashWebsocketComponent extends Component {
-    _init_client() {
-        let {url} = this.props;
-        const {protocols} = this.props;
-        url = url ? url : 'ws://' + location.host + location.pathname + 'ws';
-        this.client = new WebSocket(url, protocols);
-
-        this.client.onopen = (e) => {
-            this.props.setProps({
-                state: {
-                    readyState: WebSocket.OPEN,
-                    isTrusted: e.isTrusted,
-                    timeStamp: e.timeStamp,
-                    origin: e.origin,
-                    lastConnected: Number(new Date()),
-                },
-            });
-        };
-        this.client.onmessage = (e) => {
-            this.props.setProps({
-                state: {
-                    lastConnected: Number(new Date()),
-                },
-                message: {
-                    data: e.data,
-                    isTrusted: e.isTrusted,
-                    origin: e.origin,
-                    timeStamp: e.timeStamp,
-                },
-            });
-        };
-        this.client.onerror = (e) => {
-            console.log(`ON ERROR ${location.host}`);
-            this.props.setProps({error: JSON.stringify(e)});
-        };
-        this.client.onclose = (e) => {
-            console.log(`ON CLOSE ${location.host}`);
-            this.props.setProps({
-                error: JSON.stringify(e),
-                state: {
-                    readyState: WebSocket.CLOSED,
-                    isTrusted: e.isTrusted,
-                    timeStamp: e.timeStamp,
-                    code: e.code,
-                    reason: e.reason,
-                    wasClean: e.wasClean,
-                    lastConnected: Number(new Date()),
-                },
-            });
-            setTimeout(_init_client, 1000);
+    constructor(props) {
+        super(props);
+        this.state = {
+          isConnected: false,
+          reconnectAttempts: 0
         };
     }
 
     componentDidMount() {
-        console.log('Try to load web socket component');
-        this.props.setProps({
-            state: {
-                ...this.props.state,
-                lastConnected: 0,
-            },
-        });
-        this._init_client();
-    }
-
-    componentDidUpdate(prevProps) {
-        const {send} = this.props;
-        if (send && send !== prevProps.send) {
-            if (this.props.state.readyState === WebSocket.OPEN) {
-                this.client.send(send);
-            }
-            // TODO handle this
+        if (this.props.url){
+            this.connectWebSocket();
         }
     }
 
+    componentDidUpdate(prevProps) {
+        const {send, url} = this.props;
+        if (this.ws == null){
+            if (url != null){
+                this.connectWebSocket();
+            } else {
+                return;
+            }
+        }
+
+        if (send && send !== prevProps.send) {
+            if (this.ws.readyState === WebSocket.OPEN) {
+                this.ws.send(send);
+            } else {
+                console.error(`Trying to send data -> ${send} over closed websocket connection.`);
+            }
+        }
+    }
+    
     componentWillUnmount() {
-        this.client.onopen = null;
-        this.client.onclose = null;
-        this.client.onerror = null;
-        this.client.onmessage = null;
-        this.client.close();
+        this.disconnectWebSocket();
     }
 
+    attemptReconnect() {
+        if (
+            (this.props.maxReconnectAttempts === UNLIMITED_RECONNECT_ATTEMPTS) ||
+            (this.state.reconnectAttempts < this.props.maxReconnectAttempts)
+        ) {
+          setTimeout(() => {
+            this.setState({reconnectAttempts: this.state.reconnectAttempts += 1});
+            let maxReconnectAttemptsStr = (
+                this.props.maxReconnectAttempts == UNLIMITED_RECONNECT_ATTEMPTS ? 'Unlimited' : this.props.maxReconnectAttempts
+            );
+            console.log(
+                `Attempting to reconnect... Attempt (${this.state.reconnectAttempts}/${maxReconnectAttemptsStr})`
+            );
+            this.connectWebSocket();
+          }, this.props.reconnectIntervalMs);
+        } else {
+          console.error('Max reconnect attempts reached.');
+        }
+    };
+
+    connectWebSocket() {
+        const { url, protocols } = this.props;
+
+        this.ws = new WebSocket(url, protocols);    
+
+        this.ws.onopen = () => {
+            console.log('WebSocket connected');
+            this.setState({
+                isConnected: true,
+                reconnectAttempts: 0
+            });
+        };
+
+        this.ws.onmessage = (msg) => {
+            this.props.setProps({
+                message: {
+                    data: msg.data,
+                    isTrusted: msg.isTrusted,
+                    origin: msg.origin,
+                    timeStamp: msg.timeStamp,
+                }
+            });
+        };
+
+        this.ws.onclose = () => {
+            console.log('WebSocket disconnected');
+            this.setState({ isConnected: false });
+            this.disconnectWebSocket();
+            this.attemptReconnect();
+        };
+
+        this.ws.onerror = (error) => {
+            this.props.setProps({error: JSON.stringify(error)});
+            if (this.ws?.readyState == WebSocket.OPEN){
+                this.ws.close();
+            }
+        };
+    };
+
+    disconnectWebSocket() {
+        if (this.ws?.readyState == WebSocket.OPEN || this.ws?.readyState == WebSocket.CONNECTING) {
+          this.ws.close();
+          delete this.ws;
+        }
+    };
+    
     render() {
         return null;
     }
 }
 
 DashWebsocketComponent.defaultProps = {
-    state: {readyState: WebSocket.CONNECTING},
+    state: {},
+    maxReconnectAttempts: UNLIMITED_RECONNECT_ATTEMPTS,
+    reconnectIntervalMs: DEFAULT_RECONNECT_INTERVAL_MS,
 };
 
 DashWebsocketComponent.propTypes = {
@@ -114,14 +140,24 @@ DashWebsocketComponent.propTypes = {
     send: PropTypes.oneOfType([PropTypes.object, PropTypes.string]),
 
     /**
-     * The websocket endpoint (e.g. wss://echo.websocket.org).
-     */
-    url: PropTypes.string,
-
-    /**
      * Supported websocket protocols (optional).
      */
     protocols: PropTypes.arrayOf(PropTypes.string),
+
+    /**
+     * Duration between attempts to reconnect. Default = 2000ms -> 2sec.
+     */
+    reconnectIntervalMs: PropTypes.number,
+    
+    /**
+     * Max count of the reconnect attempts. Default = -1 -> Unlimited. 
+     */
+    maxReconnectAttempts: PropTypes.number,
+
+    /**
+     * The websocket endpoint (e.g. wss://echo.websocket.org).
+     */
+    url: PropTypes.string,
 
     /**
      * The ID used to identify this component in Dash callbacks.

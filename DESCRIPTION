@@ -1,6 +1,6 @@
 Package: dashWebsocketComponent
 Title: Project Description
-Version: 0.0.2
+Version: 1.0.0
 Description: Project Description
 Depends: R (>= 3.0.2)
 Imports: 

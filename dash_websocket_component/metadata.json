@@ -64,13 +64,6 @@
         "required": false,
         "description": "When this property is set, a message is sent with its content."
       },
-      "url": {
-        "type": {
-          "name": "string"
-        },
-        "required": false,
-        "description": "The websocket endpoint (e.g. wss://echo.websocket.org)."
-      },
       "protocols": {
         "type": {
           "name": "arrayOf",
@@ -80,6 +73,27 @@
         },
         "required": false,
         "description": "Supported websocket protocols (optional)."
+      },
+      "reconnectIntervalMs": {
+        "type": {
+          "name": "number"
+        },
+        "required": false,
+        "description": "Duration between attempts to reconnect. Default = 2000ms -> 2sec."
+      },
+      "maxReconnectAttempts": {
+        "type": {
+          "name": "number"
+        },
+        "required": false,
+        "description": "Max count of the reconnect attempts. Default = -1 -> Unlimited."
+      },
+      "url": {
+        "type": {
+          "name": "string"
+        },
+        "required": false,
+        "description": "The websocket endpoint (e.g. wss://echo.websocket.org)."
       },
       "id": {
         "type": {
