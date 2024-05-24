@@ -19,12 +19,18 @@ Keyword arguments:
 - error (dict | string; optional):
     This property is set with the content of the onerror event.
 
+- maxReconnectAttempts (number; optional):
+    Max count of the reconnect attempts. Default = -1 -> Unlimited.
+
 - message (dict | string; optional):
     When messages are received, this property is updated with the
     message content.
 
 - protocols (list of strings; optional):
     Supported websocket protocols (optional).
+
+- reconnectIntervalMs (number; optional):
+    Duration between attempts to reconnect. Default = 2000ms -> 2sec.
 
 - send (dict | string; optional):
     When this property is set, a message is sent with its content.
@@ -40,10 +46,10 @@ Keyword arguments:
     _namespace = 'dash_websocket_component'
     _type = 'DashWebsocketComponent'
     @_explicitize_args
-    def __init__(self, state=Component.UNDEFINED, message=Component.UNDEFINED, error=Component.UNDEFINED, send=Component.UNDEFINED, url=Component.UNDEFINED, protocols=Component.UNDEFINED, id=Component.UNDEFINED, **kwargs):
-        self._prop_names = ['id', 'error', 'message', 'protocols', 'send', 'state', 'url']
+    def __init__(self, state=Component.UNDEFINED, message=Component.UNDEFINED, error=Component.UNDEFINED, send=Component.UNDEFINED, protocols=Component.UNDEFINED, reconnectIntervalMs=Component.UNDEFINED, maxReconnectAttempts=Component.UNDEFINED, url=Component.UNDEFINED, id=Component.UNDEFINED, **kwargs):
+        self._prop_names = ['id', 'error', 'maxReconnectAttempts', 'message', 'protocols', 'reconnectIntervalMs', 'send', 'state', 'url']
         self._valid_wildcard_attributes =            []
-        self.available_properties = ['id', 'error', 'message', 'protocols', 'send', 'state', 'url']
+        self.available_properties = ['id', 'error', 'maxReconnectAttempts', 'message', 'protocols', 'reconnectIntervalMs', 'send', 'state', 'url']
         self.available_wildcard_properties =            []
         _explicit_args = kwargs.pop('_explicit_args')
         _locals = locals()

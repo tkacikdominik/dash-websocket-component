@@ -41,14 +41,24 @@ DashWebsocketComponent.propTypes = {
     send: PropTypes.oneOfType([PropTypes.object, PropTypes.string]),
 
     /**
-     * The websocket endpoint (e.g. wss://echo.websocket.org).
-     */
-    url: PropTypes.string,
-
-    /**
      * Supported websocket protocols (optional).
      */
     protocols: PropTypes.arrayOf(PropTypes.string),
+
+    /**
+     * Duration between attempts to reconnect. Default = 2000ms -> 2sec.
+     */
+    reconnectIntervalMs: PropTypes.number,
+    
+    /**
+     * Max count of the reconnect attempts. Default = -1 -> Unlimited. 
+     */
+    maxReconnectAttempts: PropTypes.number,
+
+    /**
+     * The websocket endpoint (e.g. wss://echo.websocket.org).
+     */
+    url: PropTypes.string,
 
     /**
      * The ID used to identify this component in Dash callbacks.

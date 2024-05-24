@@ -10,7 +10,8 @@ ExampleComponent is an example component. It takes a property, `label`, and di
 }
 
 \usage{
-'dwc'DashWebsocketComponent(id=NULL, error=NULL, message=NULL, protocols=NULL,
+'dwc'DashWebsocketComponent(id=NULL, error=NULL, maxReconnectAttempts=NULL,
+message=NULL, protocols=NULL, reconnectIntervalMs=NULL,
 send=NULL, state=NULL, url=NULL)
 }
 
@@ -19,9 +20,13 @@ send=NULL, state=NULL, url=NULL)
 
 \item{error}{Named list | character. This property is set with the content of the onerror event.}
 
+\item{maxReconnectAttempts}{Numeric. Max count of the reconnect attempts. Default = -1 -> Unlimited.}
+
 \item{message}{Named list | character. When messages are received, this property is updated with the message content.}
 
 \item{protocols}{List of characters. Supported websocket protocols (optional).}
+
+\item{reconnectIntervalMs}{Numeric. Duration between attempts to reconnect. Default = 2000ms -> 2sec.}
 
 \item{send}{Named list | character. When this property is set, a message is sent with its content.}
 
